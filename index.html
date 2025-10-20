@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gráficas de f(x) y g(x) con operaciones</title>
+  
+  <!-- Librería Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* === ESTILOS (CSS) === */
+    :root {
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --accent: #2563eb;
+      --text: #0f172a;
+      --muted: #6b7280;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    h1 { margin: 0; font-size: 1.7rem; }
+    p { color: var(--muted); margin-top: 4px; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .chart-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+
+    .chart-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 260px !important;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- === CONTENIDO HTML === -->
+  <header>
+    <h1>Gráficas de f(x) = x³ y g(x) = x² + x + 1</h1>
+    <p>Incluye sus operaciones: suma, resta, multiplicación y división.</p>
+  </header>
+
+  <main class="container">
+    <section class="chart-card">
+      <h2>Funciones f(x) y g(x)</h2>
+      <canvas id="fgChart"></canvas>
+    </section>
+
+    <section class="chart-grid">
+      <div class="chart-card">
+        <h3>Suma: f + g</h3>
+        <canvas id="sumChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Resta: f - g</h3>
+        <canvas id="subChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Multiplicación: f × g</h3>
+        <canvas id="mulChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>División: f ÷ g</h3>
+        <canvas id="divChart"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>f(x): [2,5] · g(x): [1,4] · Operaciones en [2,4]</small>
+  </footer>
+
+  <!-- === SCRIPT (JavaScript) === -->
+  <script>
+    // Funciones matemáticas
+    function f(x) { return x ** 3; }
+    function g(x) { return x ** 2 + x + 1; }
+
+    // Generar puntos entre a y b
+    function linspace(a, b, n) {
+      const arr = [];
+      const step = (b - a) / (n - 1);
+      for (let i = 0; i < n; i++) arr.push(a + step * i);
+      return arr;
+    }
+
+    // Dominios
+    const xF = linspace(2, 5, 200);
+    const xG = linspace(1, 4, 200);
+    const xOps = linspace(2, 4, 200);
+
+    // Evaluar funciones
+    const yF = xF.map(f);
+    const yG = xG.map(g);
+    const yFop = xOps.map(f);
+    const yGop = xOps.map(g);
+
+    // Operaciones
+    const ySum = yFop.map((v, i) => v + yGop[i]);
+    const ySub = yFop.map((v, i) => v - yGop[i]);
+    const yMul = yFop.map((v, i) => v * yGop[i]);
+    const yDiv = yFop.map((v, i) => yGop[i] !== 0 ? v / yGop[i] : NaN);
+
+    // Crear gráficos con Chart.js
+    function crearGrafico(id, etiquetas, datasets, titulo) {
+      new Chart(document.getElementById(id), {
+        type: "line",
+        data: { labels: etiquetas, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top" },
+            title: { display: true, text: titulo }
+          },
+          interaction: { mode: "nearest", intersect: false },
+          scales: {
+            x: { title: { display: true, text: "x" } },
+            y: { title: { display: true, text: "y" } }
+          }
+        }
+      });
+    }
+
+    // Gráfico principal (f y g)
+    crearGrafico("fgChart", [],
+      [
+        {
+          label: "f(x) = x³ (dom [2,5])",
+          data: xF.map((x, i) => ({ x, y: yF[i] })),
+          parsing: { xAxisKey: "x", yAxisKey: "y" },
+          borderColor: "#2563eb",
+          fill: false,
+          tension: 0.2,
+          pointRadius: 0
+        },
+        {
+          label: "g(x) = x² + x + 1 (dom [1,4])",
+          data: xG.map((x, i) => ({ x, y: yG[i] })),
+          parsing: { xAxisKey: "x", yAxisKey: "y" },
+          borderColor: "#f97316",
+          borderDash: [6,3],
+          fill: false,
+          tension: 0.2,
+          pointRadius: 0
+        }
+      ],
+      "Funciones f(x) y g(x)"
+    );
+
+    // Gráficos de operaciones
+    crearGrafico("sumChart", xOps, [
+      { label: "f + g", data: ySum, borderColor: "#16a34a", fill: false, tension: 0.2, pointRadius: 0 }
+    ], "Suma: f(x) + g(x)");
+
+    crearGrafico("subChart", xOps, [
+      { label: "f - g", data: ySub, borderColor: "#dc2626", fill: false, tension: 0.2, pointRadius: 0 }
+    ], "Resta: f(x) - g(x)");
+
+    crearGrafico("mulChart", xOps, [
+      { label: "f × g", data: yMul, borderColor: "#9333ea", fill: false, tension: 0.2, pointRadius: 0 }
+    ], "Multiplicación: f(x) × g(x)");
+
+    crearGrafico("divChart", xOps, [
+      { label: "f ÷ g", data: yDiv, borderColor: "#b45309", fill: false, tension: 0.2, pointRadius: 0 }
+    ], "División: f(x) ÷ g(x)");
+  </script>
+</body>
+</html>
